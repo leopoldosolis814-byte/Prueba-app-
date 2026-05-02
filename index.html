@@ -3,162 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TARS AI - Acceso Protegido</title>
+    <title>TARS AI - Protocolo Operativo v2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0A0E14; --cyan: #00F0FF; --orange: #FF9500; --red: #FF3B30; --border: rgba(0, 240, 255, 0.2);
+            --bg: #0A0E14; --grid: #0F1A24; --cyan: #00F0FF;
+            --cyan-glow: rgba(0, 240, 255, 0.4); --orange: #FF9500;
+            --orange-glow: rgba(255, 149, 0, 0.4); --red: #FF3B30;
+            --green: #30D158; --border: rgba(0, 240, 255, 0.2);
+            --card-bg: rgba(10, 14, 20, 0.98); --header-h: 65px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; text-transform: uppercase; }
-        body { background: var(--bg); color: var(--cyan); height: 100vh; overflow: hidden; }
 
-        /* --- PANTALLAS DE FLUJO --- */
-        .overlay-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 2000; display: flex; flex-direction: column;
-            padding: 30px; overflow-y: auto;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Share Tech Mono', monospace; background-color: var(--bg);
+            color: var(--cyan); height: 100vh; overflow: hidden;
+            background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 40px 40px; text-transform: uppercase;
         }
-        .step-card {
-            max-width: 500px; margin: auto; width: 100%;
-            border: 1px solid var(--cyan); padding: 25px;
-            background: rgba(0, 240, 255, 0.05); box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+
+        /* --- CAPAS DE INTERFAZ --- */
+        .overlay-gate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 5000; display: flex; flex-direction: column;
+            padding: 20px; overflow-y: auto; justify-content: center; align-items: center;
+        }
+        .step-box {
+            width: 100%; max-width: 450px; border: 1px solid var(--cyan);
+            padding: 30px; background: var(--card-bg); position: relative;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
         }
         .hidden { display: none !important; }
 
+        /* --- SIDEBAR Y NAVEGACIÓN --- */
+        .sidebar {
+            position: fixed; left: -300px; top: 0; width: 300px; height: 100%;
+            background: var(--card-bg); border-right: 1px solid var(--border);
+            z-index: 2000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px; backdrop-filter: blur(15px); display: flex; flex-direction: column;
+        }
+        .sidebar.open { left: 0; box-shadow: 10px 0 50px #000; }
+
+        /* --- CARRUSEL PUBLICITARIO --- */
+        .banner-carousel {
+            height: 260px; border: 1px solid var(--border); margin: 20px 0;
+            position: relative; overflow: hidden; background: #000;
+        }
+        .slide {
+            position: absolute; width: 100%; height: 100%; opacity: 0;
+            transition: 0.8s ease; padding: 15px; display: flex; flex-direction: column;
+        }
+        .slide.active { opacity: 1; z-index: 10; }
+        .slide-free { border-top: 4px solid var(--cyan); }
+        .slide-pro { border-top: 4px solid var(--orange); }
+        .slide-ent { border-top: 4px solid var(--red); }
+
+        /* --- ESTADOS DEL OJO TARS --- */
+        .tars-container { margin: 40px auto; text-align: center; }
+        .eye {
+            width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--cyan);
+            background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
+            box-shadow: 0 0 30px var(--cyan-glow); margin: 0 auto; transition: 0.8s;
+        }
+        .eye.searching { border-color: var(--orange); background: radial-gradient(circle, var(--orange) 0%, transparent 70%); box-shadow: 0 0 30px var(--orange-glow); }
+        .eye.reading { border-color: var(--red); background: radial-gradient(circle, var(--red) 0%, transparent 70%); box-shadow: 0 0 30px rgba(255,59,48,0.5); }
+
+        /* --- BOTONES Y ENTRADAS --- */
+        .btn-core {
+            width: 100%; padding: 15px; background: transparent; border: 1px solid var(--cyan);
+            color: var(--cyan); cursor: pointer; font-family: inherit; margin-top: 10px;
+        }
+        .btn-core:hover { background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 15px var(--cyan-glow); }
+        .btn-pay { font-size: 9px; padding: 10px; border: 1px solid var(--border); background: #111; cursor: pointer; flex: 1; }
+        .btn-pay:hover { background: var(--cyan); color: #000; }
+
         input, select {
-            width: 100%; background: #000; border: 1px solid var(--border);
-            color: var(--cyan); padding: 12px; margin: 10px 0; outline: none;
+            width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--border);
+            color: var(--cyan); font-family: inherit; outline: none;
         }
-        input:focus { border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
-
-        .btn-next {
-            background: var(--cyan); color: #000; width: 100%; padding: 15px;
-            font-weight: bold; cursor: pointer; border: none; margin-top: 15px;
-        }
-
-        /* --- FOOTER LEGAL --- */
-        .legal-footer {
-            font-size: 9px; color: rgba(0, 240, 255, 0.4); text-align: center;
-            padding: 15px; border-top: 1px solid var(--border); margin-top: 20px;
-        }
-        .legal-links { display: flex; justify-content: center; gap: 15px; margin-top: 5px; cursor: pointer; }
-        .legal-links span:hover { color: var(--cyan); text-decoration: underline; }
-
-        /* --- ESTILOS SIDEBAR Y BANNERS (MANTENIDOS) --- */
-        .sidebar { position: fixed; left: -300px; width: 300px; height: 100%; background: #0D1219; border-right: 1px solid var(--border); z-index: 1000; transition: 0.5s; padding: 20px; }
-        .sidebar.open { left: 0; }
-        .banner-wrap { height: 250px; border: 1px solid var(--border); overflow: hidden; margin: 15px 0; position: relative; }
-        .slide { position: absolute; opacity: 0; transition: 0.5s; padding: 15px; width: 100%; height: 100%; display: flex; flex-direction: column; }
-        .slide.active { opacity: 1; }
     </style>
 </head>
 <body>
-    <!-- PANTALLA 1: REGISTRO/LOGIN -->
-    <div id="step-1" class="overlay-screen">
-        <div class="step-card">
-            <h2 style="letter-spacing: 3px;">[ INICIAR PROTOCOLO ]</h2>
-            <p style="font-size: 10px; margin: 10px 0;">CREA TU IDENTIDAD TARS</p>
-            <input type="email" id="reg-email" placeholder="CORREO ELECTRÓNICO">
-            <input type="password" id="reg-pass" placeholder="PASSWORD_HASH">
-            <button class="btn-next" onclick="nextStep(2)">AUTORIZAR REGISTRO</button>
+    <!-- FASE 6: ONBOARDING OBLIGATORIO -->
+    <div id="gate-1" class="overlay-gate">
+        <div class="step-box">
+            <h2 style="letter-spacing: 4px;">[ REGISTRO_TARS ]</h2>
+            <p style="font-size: 10px; color: var(--border); margin: 10px 0;">CREAR IDENTIDAD DE USUARIO (FASE 1)[cite: 1]</p>
+            <input type="email" id="u-email" placeholder="USER_EMAIL">
+            <input type="password" placeholder="USER_PASSWORD">
+            <button class="btn-core" onclick="goStep(2)">SIGUIENTE ></button>
         </div>
     </div>
 
-    <!-- PANTALLA 2: GEOLOCALIZACIÓN (FASE 6) -->
-    <div id="step-2" class="overlay-screen hidden">
-        <div class="step-card">
-            <h2>[ GEO-CONFIG ]</h2>
-            <p style="font-size: 10px; margin: 10px 0;">EL PAÍS DEFINE LOS CANALES DE NOTICIAS Y DIVISAS</p>
-            <select id="reg-country">
-                <option value="AR">ARGENTINA (DETECTADO POR IP)</option>
-                <option value="MX">MÉXICO</option>
-                <option value="ES">ESPAÑA</option>
-                <option value="US">ESTADOS UNIDOS</option>
+    <div id="gate-2" class="overlay-gate hidden">
+        <div class="step-box">
+            <h2 style="letter-spacing: 4px;">[ GEO_LOCALIZACIÓN ]</h2>
+            <p style="font-size: 10px; color: var(--border); margin: 10px 0;">DETECCIÓN DE PAÍS Y ZONA HORARIA[cite: 1]</p>
+            <select id="u-country">
+                <option>ARGENTINA</option><option>MÉXICO</option><option>ESPAÑA</option><option>COLOMBIA</option>
             </select>
-            <input type="text" id="reg-tz" value="GMT-3 (AMERICA/ARGENTINA)" readonly>
-            <button class="btn-next" onclick="nextStep(3)">GUARDAR GEODATA</button>
+            <input type="text" value="GMT-3 (AUTOMÁTICO)" readonly>
+            <button class="btn-core" onclick="goStep(3)">SIGUIENTE ></button>
         </div>
     </div>
 
-    <!-- PANTALLA 3: BRIEFING & LEGAL -->
-    <div id="step-3" class="overlay-screen hidden">
-        <div class="step-card">
-            <h2>[ BRIEFING & LEGAL ]</h2>
-            <div style="font-size: 10px; margin: 15px 0;">
-                <input type="checkbox" id="check-mail" checked style="width: auto;"> RECIBIR BRIEFING POR EMAIL (GRATIS)<br><br>
-                <input type="checkbox" id="check-wa" style="width: auto;"> RECIBIR POR WHATSAPP (PRO/ADD-ON)
+    <div id="gate-3" class="overlay-gate hidden">
+        <div class="step-box">
+            <h2 style="letter-spacing: 4px;">[ PROTOCOLO_FINAL ]</h2>
+            <p style="font-size: 10px; margin: 10px 0;">CANAL DE BRIEFING DIARIO (8AM)[cite: 1]</p>
+            <div style="font-size: 11px; margin-bottom: 15px;">
+                <input type="checkbox" checked style="width: auto;"> EMAIL (SISTEMA BASE)<br>
+                <input type="checkbox" id="wa-check" style="width: auto;"> WHATSAPP (SOLO PLANES DE PAGO)[cite: 1]
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 10px; font-size: 8px; border: 1px solid var(--border);">
-                AL HACER CLIC, ACEPTAS NUESTROS <b>TÉRMINOS DE SERVICIO</b> Y LA <b>POLÍTICA DE PRIVACIDAD</b> DE TARS AI. TODOS LOS DERECHOS RESERVADOS 2026.
+            <div style="font-size: 8px; border: 1px solid var(--border); padding: 10px; color: var(--border);">
+                AL ACTIVAR, ACEPTAS LOS TÉRMINOS Y CONDICIONES, EL AVISO DE PRIVACIDAD Y EL TRATAMIENTO DE DATOS SEGÚN LA LEY DE CIBERSEGURIDAD 2026[cite: 1].
             </div>
-            <button class="btn-next" onclick="finishOnboarding()">ACTIVAR 14 DÍAS DE TRIAL</button>
+            <button class="btn-core" onclick="finishAll()" style="background: var(--cyan); color: #000;">ACTIVAR TRIAL 14 DÍAS</button>
         </div>
     </div>
 
-    <!-- INTERFAZ PRINCIPAL (DASHBOARD) -->
-    <div id="main-ui" class="hidden">
-        <header style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center;">
-            <div onclick="toggleMenu()" style="cursor:pointer; font-size: 20px;">☰</div>
-            <div style="flex: 1; text-align: center; letter-spacing: 5px;">TARS_CORE_OS</div>
-        </header>
+    <!-- INTERFAZ DASHBOARD -->
+    <header style="height: var(--header-h); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px;">
+        <div style="cursor:pointer; font-size: 24px;" onclick="toggleMenu()">☰</div>
+        <div style="flex:1; text-align:center; letter-spacing: 6px; font-weight: bold;">TARS_OS</div>
+        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green);"></div>
+    </header>
 
-        <div class="sidebar" id="sidebar">
-            <h3>PLANES DISPONIBLES</h3>
-            <div class="banner-wrap" id="carousel">
-                <div class="slide active" style="border-top: 3px solid var(--cyan);">
-                    <div style="font-size: 16px;">EXPLORER PRO</div>
-                    <div style="font-size: 20px; color: #fff;">$29/MES</div>
-                    <p style="font-size: 9px; margin-top: 10px;">> WHATSAPP INTEGRADO (200 MSGS)[cite: 1]</p>
-                    <button class="btn-next" style="padding: 5px; font-size: 10px;" onclick="pay()">STRIPE / PAYPAL / MP</button>
-                </div>
-                <div class="slide" style="border-top: 3px solid var(--red);">
-                    <div style="font-size: 16px;">ANALYST ENT</div>
-                    <div style="font-size: 20px; color: #fff;">$79/MES</div>
-                    <p style="font-size: 9px; margin-top: 10px;">> DATA REAL-TIME & MULTI-USER[cite: 1]</p>
-                    <button class="btn-next" style="padding: 5px; font-size: 10px;" onclick="pay()">COMPRAR AHORA</button>
+    <div class="sidebar" id="sidebar">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+            <span style="font-size: 12px;">SISTEMA_MENU</span>
+            <span style="cursor:pointer;" onclick="toggleMenu()">[X]</span>
+        </div>
+
+        <div class="banner-carousel" id="carousel">
+            <!-- PLAN 1: BETA TESTER[cite: 1] -->
+            <div class="slide slide-free active">
+                <h4 style="color: var(--cyan);">BETA TESTER (FREE)</h4>
+                <div style="font-size: 22px; margin: 5px 0;">$0</div>
+                <ul style="font-size: 9px; list-style: none;">
+                    <li>> 5 CONSULTAS WEB / DÍA[cite: 1]</li>
+                    <li>> MEMORIA VOLÁTIL[cite: 1]</li>
+                    <li>> SIN WHATSAPP[cite: 1]</li>
+                </ul>
+                <button class="btn-core" style="margin-top:auto; font-size: 10px;">ESTADO: ACTIVO</button>
+            </div>
+            <!-- PLAN 2: EXPLORER PRO[cite: 1] -->
+            <div class="slide slide-pro">
+                <h4 style="color: var(--orange);">EXPLORER (PRO)</h4>
+                <div style="font-size: 22px; margin: 5px 0;">$29<small>/MES</small></div>
+                <ul style="font-size: 9px; list-style: none;">
+                    <li>> CONSULTAS ILIMITADAS[cite: 1]</li>
+                    <li>> MEMORIA RAG PINECONE[cite: 1]</li>
+                    <li>> WHATSAPP (200 MSGS)[cite: 1]</li>
+                </ul>
+                <div style="display:flex; gap:5px; margin-top:auto;">
+                    <button class="btn-pay" onclick="pay()">STRIPE</button>
+                    <button class="btn-pay" onclick="pay()">PAYPAL</button>
+                    <button class="btn-pay" onclick="pay()">M.PAGO</button>
                 </div>
             </div>
-            <div class="legal-footer">
-                © 2026 TARS ARTIFICIAL INTELLIGENCE INC.<br>
-                PROHIBIDA SU REPRODUCCIÓN TOTAL O PARCIAL.<br>
-                <div class="legal-links">
-                    <span onclick="alert('LEGAL: TÉRMINOS Y CONDICIONES...')">TÉRMINOS</span>
-                    <span onclick="alert('LEGAL: PRIVACIDAD DE DATOS...')">PRIVACIDAD</span>
-                </div>
+            <!-- PLAN 3: ANALYST ENT[cite: 1] -->
+            <div class="slide slide-ent">
+                <h4 style="color: var(--red);">ANALYST (ENTERPRISE)</h4>
+                <div style="font-size: 22px; margin: 5px 0;">$79<small>/MES</small></div>
+                <ul style="font-size: 9px; list-style: none;">
+                    <li>> APIS FINANCIERAS REALES[cite: 1]</li>
+                    <li>> ALERTAS CRÍTICAS PRIORIDAD[cite: 1]</li>
+                    <li>> MULTIUSUARIO (2 NÚMEROS)[cite: 1]</li>
+                </ul>
+                <button class="btn-core" style="margin-top:auto; border-color: var(--red); color: var(--red);" onclick="pay()">ADQUIRIR LICENCIA</button>
             </div>
         </div>
 
-        <main style="padding: 40px; text-align: center;">
-            <div id="eye" style="width: 100px; height: 100px; border: 2px solid var(--cyan); border-radius: 50%; margin: 0 auto; box-shadow: 0 0 20px var(--cyan);"></div>
-            <h1 style="margin-top: 20px;">SISTEMA ONLINE</h1>
-        </main>
+        <div style="font-size: 9px; color: var(--border); text-align: center; margin-top: auto;">
+            © 2026 TARS AI INC. - DERECHOS RESERVADOS[cite: 1]<br>
+            <span style="text-decoration: underline; cursor:pointer;">TÉRMINOS Y CONDICIONES</span>
+        </div>
+    </div>
+
+    <main style="padding: 20px;">
+        <div class="tars-container">
+            <div class="eye" id="tarsEye"></div>
+            <h2 id="tarsStatus" style="margin-top: 25px; letter-spacing: 8px;">STANDBY</h2>
+        </div>
+        <div style="max-width: 600px; margin: 0 auto; background: rgba(0,240,255,0.05); border: 1px solid var(--border); padding: 15px; font-size: 11px;">
+            <p>> CONSOLA DE SALIDA:</p>
+            <div id="output" style="margin-top: 10px; color: #fff;">ESPERANDO ORDEN DEL OPERADOR...</div>
+        </div>
+    </main>
+
+    <div style="position: fixed; bottom: 0; width: 100%; padding: 15px; background: var(--bg); border-top: 1px solid var(--border); display: flex; gap: 10px;">
+        <input type="text" id="userInput" placeholder="INGRESAR COMANDO..." style="margin:0; flex:1;">
+        <button class="btn-core" style="margin:0; width: auto; padding: 0 30px;" onclick="runTars()">EJECUTAR</button>
     </div>
 
     <script>
-        function nextStep(step) {
-            document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById('step-' + step).classList.remove('hidden');
+        function goStep(n) {
+            document.querySelectorAll('.overlay-gate').forEach(g => g.classList.add('hidden'));
+            document.getElementById('gate-' + n).classList.remove('hidden');
         }
-
-        function finishOnboarding() {
-            document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById('main-ui').classList.remove('hidden');
-            alert("SISTEMA ACTIVADO: 14 DÍAS DE PRUEBA INICIADOS[cite: 1]");
+        function finishAll() {
+            document.querySelectorAll('.overlay-gate').forEach(g => g.classList.add('hidden'));
+            alert("TRIAL ACTIVADO: 14 DÍAS RESTANTES[cite: 1]");
         }
-
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-
-        // Rotación del carrusel
-        let cur = 0;
+        
+        let sld = 0;
         const slides = document.querySelectorAll('.slide');
         setInterval(() => {
-            slides[cur].classList.remove('active');
-            cur = (cur + 1) % slides.length;
-            slides[cur].classList.add('active');
+            slides[sld].classList.remove('active');
+            sld = (sld + 1) % slides.length;
+            slides[sld].classList.add('active');
         }, 3000);
 
+        function runTars() {
+            const eye = document.getElementById('tarsEye');
+            const status = document.getElementById('tarsStatus');
+            const val = document.getElementById('userInput').value;
+            if(!val) return;
+
+            eye.className = 'eye searching';
+            status.innerText = 'BUSCANDO...';
+            setTimeout(() => {
+                eye.className = 'eye reading';
+                status.innerText = 'PROCESANDO...';
+            }, 1500);
+            setTimeout(() => {
+                eye.className = 'eye';
+                status.innerText = 'STANDBY';
+                document.getElementById('output').innerText = "TARS: RESPUESTA GENERADA PARA '" + val + "' UTILIZANDO NEWSAPI[cite: 1].";
+                document.getElementById('userInput').value = '';
+            }, 4000);
+        }
         function pay() { window.open('https://stripe.com', '_blank'); }
     </script>
 </body>
 </html>
-    
