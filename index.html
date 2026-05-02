@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TARS AI - Protocolo de Validación</title>
+    <title>TARS AI - Business Assistant v1.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,109 +14,161 @@
             --orange: #FF9500;
             --orange-glow: rgba(255, 149, 0, 0.4);
             --red: #FF3B30;
+            --green: #30D158;
             --border: rgba(0, 240, 255, 0.2);
-            --card-bg: rgba(0, 240, 255, 0.03);
-            --header-h: 70px;
-            --input-h: 80px;
+            --card-bg: rgba(10, 14, 20, 0.9);
+            --header-h: 60px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Share Tech Mono', monospace;
             background-color: var(--bg);
             color: var(--cyan);
             height: 100vh;
-            overflow: hidden; /* No scroll global */
+            overflow: hidden;
             background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-size: 40px 40px;
             text-transform: uppercase;
         }
 
-        /* LAYOUT PRINCIPAL */
-        .app-wrapper {
-            display: grid;
-            grid-template-rows: var(--header-h) 1fr var(--input-h);
-            height: 100vh;
-            max-width: 900px;
-            margin: 0 auto;
-            border-left: 1px solid var(--border);
+        /* --- LAYOUT & NAVIGATION --- */
+        .app-container { display: flex; height: 100vh; width: 100vw; position: relative; }
+
+        /* MENÚ HAMBURGUESA LATERAL */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--card-bg);
             border-right: 1px solid var(--border);
+            z-index: 1000;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+            backdrop-filter: blur(10px);
         }
 
-        /* HEADER & STATS */
+        .sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+
+        .nav-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .nav-btn:hover { background: rgba(0, 240, 255, 0.1); border-color: var(--cyan); }
+        .nav-btn.active { border-color: var(--cyan); background: rgba(0, 240, 255, 0.15); box-shadow: 0 0 10px var(--cyan-glow); }
+
+        /* HEADER */
         header {
+            position: absolute;
+            top: 0; width: 100%;
+            height: var(--header-h);
             display: flex;
-            justify-content: space-between;
             align-items: center;
             padding: 0 20px;
             border-bottom: 1px solid var(--border);
-            background: rgba(10, 14, 20, 0.8);
-            backdrop-filter: blur(5px);
+            background: rgba(10, 14, 20, 0.7);
+            z-index: 900;
         }
 
-        .system-stats { display: flex; gap: 20px; font-size: 10px; }
-        .stat-box { width: 100px; }
-        .bar-bg { width: 100%; height: 3px; background: rgba(0, 240, 255, 0.1); margin-top: 4px; }
-        .bar-fill { height: 100%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+        .menu-toggle {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 20px;
+            color: var(--cyan);
+        }
 
-        /* AREA DE CONTENIDO (PANTALLAS) */
+        /* --- MAIN CONTENT AREA --- */
         main {
+            flex: 1;
+            margin-top: var(--header-h);
+            position: relative;
             overflow-y: auto;
             padding: 20px;
-            position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
-        .screen { display: none; height: 100%; }
-        .screen.active { display: block; }
+        .screen { display: none; width: 100%; max-width: 800px; margin: 0 auto; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease; }
 
-        /* CHAT / DASHBOARD */
-        .chat-container { display: flex; flex-direction: column; gap: 20px; align-items: center; }
-        .eye-mini {
-            width: 120px; height: 120px;
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- ESTADOS DEL OJO TARS --- */
+        .tars-eye-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 40px 0;
+        }
+
+        .eye {
+            width: 140px; height: 140px;
             border-radius: 50%;
-            border: 2px solid var(--cyan);
-            background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
+            border: 3px solid var(--cyan);
+            transition: 0.8s;
+            position: relative;
+            background: radial-gradient(circle, var(--cyan) 0%, transparent 75%);
             box-shadow: 0 0 30px var(--cyan-glow);
-            margin: 20px 0;
         }
 
-        /* BOTONES DE ACCIÓN RÁPIDA */
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
+        /* Estados según Fase 6 */
+        .eye.waiting { border-color: var(--cyan); background: radial-gradient(circle, var(--cyan) 0%, transparent 75%); box-shadow: 0 0 30px var(--cyan-glow); }
+        .eye.searching { border-color: var(--orange); background: radial-gradient(circle, var(--orange) 0%, transparent 75%); box-shadow: 0 0 30px var(--orange-glow); }
+        .eye.reading { border-color: var(--red); background: radial-gradient(circle, var(--red) 0%, transparent 75%); box-shadow: 0 0 30px rgba(255,59,48,0.4); }
+
+        /* --- BANNERS DE PLANES --- */
+        .plan-banner {
+            border: 1px solid var(--orange);
+            background: rgba(255, 149, 0, 0.05);
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-ghost {
-            padding: 10px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--cyan);
-            font-family: inherit;
-            cursor: pointer;
+        .plan-tag {
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--orange);
+            color: var(--bg);
+            padding: 2px 10px;
             font-size: 10px;
-            transition: 0.3s;
+            font-weight: bold;
         }
 
-        .btn-ghost:hover { border-color: var(--cyan); background: rgba(0, 240, 255, 0.1); }
-
-        /* INPUT FIJO ABAJO */
-        .input-area {
-            border-top: 1px solid var(--border);
+        /* --- INPUT AREA --- */
+        .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             padding: 15px 20px;
             background: var(--bg);
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 10px;
+            z-index: 950;
         }
 
-        .tars-input {
+        .main-input {
             flex: 1;
-            background: var(--card-bg);
+            background: rgba(0, 240, 255, 0.05);
             border: 1px solid var(--border);
             color: var(--cyan);
-            padding: 0 15px;
+            padding: 12px;
             font-family: inherit;
             outline: none;
         }
@@ -126,169 +178,154 @@
             color: var(--bg);
             border: none;
             padding: 0 20px;
+            font-family: inherit;
             font-weight: bold;
             cursor: pointer;
         }
+        /* --- CARDS & FORMS --- */
+        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        .usage-bar { width: 100%; height: 4px; background: rgba(0,240,255,0.1); margin: 10px 0; }
+        .usage-fill { height: 100%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
 
-        /* MODAL / PAGOS */
-        .modal-pay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+        .btn-action {
+            display: block; width: 100%; padding: 12px;
+            background: transparent; border: 1px solid var(--cyan);
+            color: var(--cyan); cursor: pointer; margin-top: 10px; font-family: inherit;
         }
 
-        .pay-card {
-            background: var(--bg);
-            border: 1px solid var(--cyan);
-            padding: 30px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 0 50px var(--cyan-glow);
-        }
-
-        /* NAVEGACIÓN TABS */
-        .nav-footer {
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            font-size: 10px;
-            border-top: 1px solid var(--border);
-        }
-
-        .nav-item { cursor: pointer; color: var(--border); transition: 0.3s; }
-        .nav-item.active { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
-
+        .btn-action.pro { border-color: var(--orange); color: var(--orange); }
+        
+        .footer-credits { font-size: 9px; color: var(--border); text-align: center; margin-top: auto; padding: 20px; }
     </style>
 </head>
 <body>
 
-<div class="app-wrapper">
+<div class="app-container">
+    <!-- MENÚ LATERAL (HAMBURGUESA) -->
+    <div class="sidebar" id="sidebar">
+        <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">MENÚ SISTEMA</h3>
+        <button class="nav-btn active" onclick="showScreen('screen-chat')">DASHBOARD</button>
+        <button class="nav-btn" onclick="showScreen('screen-settings')">SUSCRIPCIÓN & PAGOS</button>
+        <button class="nav-btn" onclick="showScreen('screen-onboarding')">ONBOARDING / PERFIL</button>
+        <button class="nav-btn" onclick="showScreen('screen-conexoes')">CONEXIONES (GMAIL)</button>
+        <div style="margin-top: 30px;">
+            <p style="font-size: 10px; color: var(--border);">PLAN: FREE TRIAL (14 DÍAS)</p>
+            <div class="usage-bar"><div class="usage-fill" style="width: 40%"></div></div>
+        </div>
+    </div>
+
     <!-- HEADER -->
     <header>
-        <div style="font-weight: bold; letter-spacing: 2px;">TARS_v1.0</div>
-        <div class="system-stats">
-            <div class="stat-box">
-                HONESTY 90%
-                <div class="bar-bg"><div class="bar-fill" style="width: 90%"></div></div>
-            </div>
-            <div class="stat-box">
-                HUMOR 75%
-                <div class="bar-bg"><div class="bar-fill" style="width: 75%; background: var(--orange)"></div></div>
-            </div>
-        </div>
+        <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
+        <div style="flex: 1; letter-spacing: 3px; font-weight: bold;">[ TARS ]</div>
+        <div id="status-dot" style="width: 10px; height: 10px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green);"></div>
     </header>
 
-    <!-- PANTALLAS -->
-    <main id="main-content">
-        
-        <!-- DASHBOARD (CHART & EYE) -->
+    <main>
+        <!-- SCREEN: DASHBOARD -->
         <section id="screen-chat" class="screen active">
-            <div class="chat-container">
-                <div class="eye-mini" id="tars-eye"></div>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 id="status-label">STANDBY</h2>
-                    <p style="font-size: 10px; color: var(--border)">ID SESIÓN: SUPA-77X-BETA</p>
-                </div>
-                
-                <div class="action-grid">
-                    <button class="btn-ghost" onclick="mockAction('BUSCANDO NOTICIAS...')">[NOTICIAS HOY]</button>
-                    <button class="btn-ghost" onclick="mockAction('ANALIZANDO MERCADO...')">[BITCOIN REPORT]</button>
-                    <button class="btn-ghost" onclick="mockAction('REVISANDO MEMORIA...')">[¿QUIÉN SOY?]</button>
-                    <button class="btn-ghost" onclick="showPayModal()">[ACTIVAR WHATSAPP]</button>
-                </div>
+            <div class="tars-eye-container">
+                <div class="eye waiting" id="tarsEye"></div>
+                <h2 id="tarsStatus" style="margin-top: 20px; letter-spacing: 5px;">STANDBY</h2>
+            </div>
+            
+            <div class="card" style="border-style: dashed;">
+                <p style="font-size: 11px;">SUGERENCIAS:</p>
+                <button class="btn-action" onclick="mockCommand('noticias')">NOTICIAS DE HOY (NEGOCIOS)</button>
+                <button class="btn-action" onclick="mockCommand('bitcoin')">REPORTAR VALOR BITCOIN</button>
             </div>
         </section>
 
-        <!-- SETTINGS / PLANES -->
+        <!-- SCREEN: SETTINGS & STRIPE -->
         <section id="screen-settings" class="screen">
-            <h3>PLAN ACTUAL: <span style="color: var(--orange)">FREE</span></h3>
-            <div style="margin-top: 20px; border: 1px solid var(--border); padding: 15px;">
-                <p>MENSAGES RESTANTES: 5/5</p>
-                <p style="font-size: 10px; color: var(--border); margin-bottom: 15px;">WEB SEARCH LIMIT: ACTIVADO</p>
-                <button class="btn-ghost" style="width: 100%; border-color: var(--cyan)" onclick="showPayModal()">UPGRADE A PRO ($29)</button>
+            <div class="plan-banner">
+                <div class="plan-tag">RECOMENDADO</div>
+                <h3>PLAN PRO $29/MES</h3>
+                <p style="font-size: 11px; margin: 10px 0;">INCLUYE: GMAIL OAUTH, BÚSQUEDA ILIMITADA Y MEMORIA RAG.</p>
+                <button class="btn-action pro" onclick="window.open('https://stripe.com', '_blank')">UPGRADE CON STRIPE CHECKOUT</button>
+            </div>
+
+            <div class="card">
+                <h4>WHATSAPP ADD-ON (+$10/MES)</h4>
+                <p style="font-size: 11px; color: var(--border);">BRIEFINGS DIARIOS 8AM Y ALERTAS EN TIEMPO REAL.</p>
+                <button class="btn-action" onclick="alert('ACTIVA PLAN PRO PRIMERO')">ACTIVAR WHATSAPP</button>
+            </div>
+
+            <div class="card">
+                <h4>CONSUMO DE RECURSOS (FASE 1)</h4>
+                <div style="font-size: 10px;">WEB QUERIES: 12/30</div>
+                <div class="usage-bar"><div class="usage-fill" style="width: 40%"></div></div>
+                <div style="font-size: 10px; margin-top: 10px;">WA MESSAGES: 0/200</div>
+                <div class="usage-bar"><div class="usage-fill" style="width: 0%"></div></div>
             </div>
         </section>
 
-        <!-- MEMORY HUB (VALIDACIÓN DE PERSISTENCIA) -->
-        <section id="screen-memory" class="screen">
-            <h3>MEMORY HUB (SUPABASE)</h3>
-            <div style="font-size: 12px; margin-top: 20px; color: var(--border);">
-                <p>> LOCALIZACIÓN: MÉXICO (GMT-6)</p>
-                <p>> INTERÉS: CRYPTO / TECH</p>
-                <p>> ÚLTIMO AHORRO: DIVERSIFICACIÓN</p>
+        <!-- SCREEN: ONBOARDING -->
+        <section id="screen-onboarding" class="screen">
+            <div class="card">
+                <h4>CONFIGURACIÓN INICIAL (OBLIGATORIA)</h4>
+                <div style="margin-top: 15px;">
+                    <label style="font-size: 10px; color: var(--border);">PAÍS DE OPERACIÓN</label>
+                    <select style="width: 100%; padding: 10px; background: var(--bg); color: var(--cyan); border: 1px solid var(--border); margin-bottom: 15px;">
+                        <option>MÉXICO</option><option>ARGENTINA</option><option>COLOMBIA</option>
+                    </select>
+                    <label style="font-size: 10px; color: var(--border);">WHATSAPP (VERIFICACIÓN SMS)</label>
+                    <input type="text" placeholder="+52 ..." style="width: 100%; padding: 10px; background: var(--bg); color: var(--cyan); border: 1px solid var(--border);">
+                    <button class="btn-action" style="margin-top: 20px; background: var(--cyan); color: var(--bg);">GUARDAR PERFIL</button>
+                </div>
             </div>
         </section>
 
+        <div class="footer-credits">
+            DATOS: EXCHANGERATE-API, NEWSAPI, REDDIT<br>
+            POWERED BY TARS AI
+        </div>
     </main>
 
-    <!-- INPUT ÁREA -->
-    <div class="input-area">
-        <input type="text" class="tars-input" placeholder="INGRESE COMANDO...">
-        <button class="btn-send">SEND</button>
-    </div>
-
-    <!-- NAV FOOTER (TABS) -->
-    <div class="nav-footer">
-        <div class="nav-item active" onclick="navTo('screen-chat', this)">DASHBOARD</div>
-        <div class="nav-item" onclick="navTo('screen-memory', this)">MEMORIA</div>
-        <div class="nav-item" onclick="navTo('screen-settings', this)">SISTEMA</div>
-    </div>
-</div>
-
-<!-- MODAL DE PAGO (VALIDACIÓN) -->
-<div class="modal-pay" id="modalPay">
-    <div class="pay-card">
-        <h3>DESBLOQUEAR TARS PRO</h3>
-        <p style="font-size: 12px; margin: 20px 0; color: #888;">
-            - BÚSQUEDA WEB ILIMITADA<br>
-            - MEMORIA A LARGO PLAZO<br>
-            - INTEGRACIÓN WHATSAPP
-        </p>
-        <div style="font-size: 24px; margin-bottom: 20px;">$29.00<span style="font-size: 12px;">/MES</span></div>
-        <button class="btn-send" style="width: 100%; height: 40px; margin-bottom: 10px;" onclick="alert('REDIRIGIENDO A STRIPE...')">PAGAR CON STRIPE</button>
-        <button class="btn-ghost" style="width: 100%;" onclick="hidePayModal()">CANCELAR</button>
+    <div class="input-container">
+        <input type="text" class="main-input" id="userInput" placeholder="ESCRIBÍ TU COMANDO...">
+        <button class="btn-send" onclick="handleSend()">SEND</button>
     </div>
 </div>
 
 <script>
-    // NAVEGACIÓN ENTRE SECCIONES
-    function navTo(screenId, el) {
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+    function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
-        el.classList.add('active');
+        event.currentTarget.classList.add('active');
+        toggleSidebar();
     }
 
-    // MODAL PAGO
-    function showPayModal() { document.getElementById('modalPay').style.display = 'flex'; }
-    function hidePayModal() { document.getElementById('modalPay').style.display = 'none'; }
+    function handleSend() {
+        const input = document.getElementById('userInput');
+        if(!input.value) return;
+        mockCommand(input.value);
+        input.value = '';
+    }
 
-    // MOCK DE ACCIONES (LÓGICA DE PRIORIDAD VISUAL)
-    function mockAction(text) {
-        const eye = document.getElementById('tars-eye');
-        const label = document.getElementById('status-label');
-        
-        label.innerText = text;
-        eye.style.background = 'radial-gradient(circle, var(--orange) 0%, transparent 70%)';
-        eye.style.boxShadow = '0 0 30px var(--orange-glow)';
-        
+    function mockCommand(cmd) {
+        const eye = document.getElementById('tarsEye');
+        const status = document.getElementById('tarsStatus');
+
+        // Fase 6: Naranja = Buscando
+        eye.className = 'eye searching';
+        status.innerText = 'BUSCANDO API/WEB...';
+
         setTimeout(() => {
-            label.innerText = 'PROCESANDO...';
-            eye.style.background = 'radial-gradient(circle, var(--red) 0%, transparent 70%)';
+            // Fase 6: Rojo = Leyendo
+            eye.className = 'eye reading';
+            status.innerText = 'PROCESANDO DATA...';
         }, 1500);
 
         setTimeout(() => {
-            label.innerText = 'STANDBY';
-            eye.style.background = 'radial-gradient(circle, var(--cyan) 0%, transparent 70%)';
-            eye.style.boxShadow = '0 0 30px var(--cyan-glow)';
-        }, 4000);
+            eye.className = 'eye waiting';
+            status.innerText = 'STANDBY';
+            alert('TARS: HE ENCONTRADO RESULTADOS EN NEWSAPI Y REDDIT PARA: ' + cmd);
+        }, 3500);
     }
 </script>
-
 </body>
 </html>
